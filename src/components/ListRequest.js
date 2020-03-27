@@ -1,5 +1,4 @@
 import React from 'react';
-import axios from 'axios';
 import '../ListRequest.css';
 
 import TableBoot from './TableBoot';
@@ -34,47 +33,50 @@ class ListRequest extends React.Component {
 
     async componentDidMount() {
         //get all orders
-        try{
+        await this.fetchAllOrders();
+    }
+
+    fetchAllOrders = async () => {
+        try {
             const response = await api.getAllOrders(this.state.accountId, this.state.authToken);
-            console.log('response', {response});
-            if(response.status === 200){
+            if (response.status === 200) {
                 this.setState({ orderList: response.data.orders });
             } else {
                 await this.createStaticData();
             }
-        } catch (error){
-            this.setState({fetchError: error.toString()});
+        } catch (error) {
+            this.setState({ fetchError: error.toString() });
             await this.createStaticData();
         }
-    }
+    };
 
     //placeholder data
-    async createStaticData(){
+    async createStaticData() {
         await this.setState({
             orderList: [
-            {
-                id: '',
-                accountId: '',
-                orderStatus: '',
-                orderType: '',
-                requestCount: '100',
+                {
+                    id: '',
+                    accountId: '',
+                    orderStatus: '',
+                    orderType: '',
+                    requestCount: '100',
 
-                district: 'Bengaluru',
-                type: 'VEHICLE',
-                status: 'Approved',
-                createdAt: '25/03/2020 | 07:01 am',
-                pdfUrl:
-                    'https://www.who.int/docs/default-source/coronaviruse/situation-reports/20200308-sitrep-48-covid-19.pdf',
-            },
-            {
-                requestCount: '300',
-                district: 'Bengaluru',
-                type: 'PERSON',
-                status: 'Pending',
-                createdAt: '30/04/2020 | 10:01 pm',
-                pdfUrl: null,
-            },
-        ],
+                    district: 'Bengaluru',
+                    type: 'VEHICLE',
+                    status: 'Approved',
+                    createdAt: '25/03/2020 | 07:01 am',
+                    pdfUrl:
+                        'https://www.who.int/docs/default-source/coronaviruse/situation-reports/20200308-sitrep-48-covid-19.pdf',
+                },
+                {
+                    requestCount: '300',
+                    district: 'Bengaluru',
+                    type: 'PERSON',
+                    status: 'Pending',
+                    createdAt: '30/04/2020 | 10:01 pm',
+                    pdfUrl: null,
+                },
+            ],
         });
     }
 
@@ -84,7 +86,13 @@ class ListRequest extends React.Component {
             return;
         }
         try {
-            const response = await api.createOrder(this.state.type, this.state.file, this.state.authToken);
+            let formData = new FormData(); //formdata object
+            formData.append('file', this.state.file); //append the values with key, value pair
+            formData.append('orderType', this.state.type);
+            formData.append('authToken', this.state.authToken);
+
+            const response = await api.createOrder(formData);
+            await this.fetchAllOrders();
             console.log(response);
         } catch (error) {
             console.log(error);
@@ -92,7 +100,23 @@ class ListRequest extends React.Component {
     }
 
     async onFileChangeHandler(event) {
-        await this.setState({ file: event.target.files });
+        await this.setState({ file: event.target.files[0] });
+    }
+
+    async onVehicle() {
+        await this.setState({
+            type: 'vehicle',
+            person: false,
+            vehicle: true,
+        });
+    }
+
+    async onPerson() {
+        await this.setState({
+            type: 'person',
+            person: true,
+            vehicle: false,
+        });
     }
 
     async onVehicle() {
@@ -140,8 +164,8 @@ class ListRequest extends React.Component {
                     </BaseCard>
                 </div>
                 <TableBoot rows={this.state.orderList} />
-                </div>
-            );
+            </div>
+        );
     }
 }
 export default ListRequest;
